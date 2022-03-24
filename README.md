@@ -1,7 +1,7 @@
 - 👋 Hi, I’m @PwrFr
 - 👀 I’m interested in FrontEnd Development
 - 🌱 I’m currently learning NextJS
-- 💞️ I’m looking to collaborate on Web Design
+- 💞️ I’m looking to collaborate on FrontEnd and Web Developer
 - 📫 How to reach me Gmail: pwrfrii@gmail.com
 
 <!---
