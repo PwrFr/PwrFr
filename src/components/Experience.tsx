@@ -1,5 +1,5 @@
 "use client";
-
+import { User } from "defyne-icons";
 import { useRef } from "react";
 import { motion, useScroll } from "motion/react";
 import { useParallax } from "@/lib/use-parallax";
@@ -54,6 +54,7 @@ export function Experience() {
   return (
     <section id="work" className="relative overflow-hidden bg-deep text-paper">
       <div className="mx-auto max-w-[95rem] px-6 pt-24 sm:px-24 md:pt-36">
+        <User className="stroke-3 size-30" />
         <h2 className="font-display text-[clamp(2.5rem,7vw,6rem)] font-extrabold leading-none tracking-[-0.03em]">
           Where I have built things
         </h2>

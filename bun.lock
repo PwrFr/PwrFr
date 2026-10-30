@@ -17,6 +17,7 @@
         "@types/three": "^0.186.0",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
+        "defyne-icons": "^1.0.2",
         "framer-motion": "^14.7.1",
         "lenis": "^1.3.27",
         "lucide-react": "^0.475.0",
@@ -457,6 +458,8 @@
     "debug": ["debug@4.4.0", "", { "dependencies": { "ms": "^2.1.3" } }, "sha512-6WTZ/IxCY/T6BALoZHaE4ctp9xm+Z5kY/pzYaCHRFeyVhojxlrm+46y68HA6hr0TcwEssoxNiDEUJQjfPZ/RYA=="],
 
     "deep-is": ["deep-is@0.1.4", "", {}, "sha512-oIPzksmTg4/MriiaYGO+okXDT7ztn/w3Eptv/+gSIdMdKsJo0u4CfYNFJPy+4SKMuCqGw2wxnA+URMg3t8a/bQ=="],
+
+    "defyne-icons": ["defyne-icons@1.0.2", "", { "peerDependencies": { "react": ">=18.0.0" } }, "sha512-afvsH7QOf1zNhO7hqBgYDfuZFvDtqkkIILURg5dR7FyFZP4nYPfmeTsY+FPImp1ST+0GWHZa0hukNDo/fRG2Ug=="],
 
     "detect-gpu": ["detect-gpu@5.0.70", "", { "dependencies": { "webgl-constants": "^1.1.1" } }, "sha512-bqerEP1Ese6nt3rFkwPnGbsUF9a4q+gMmpTVVOEzoCyeCc+y7/RvJnQZJx1JwhgQI5Ntg0Kgat8Uu7XpBqnz1w=="],
 
