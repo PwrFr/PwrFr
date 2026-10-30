@@ -1,14 +1,2 @@
-## 👋 Hi, I’m @PwrFr
-
-I am a Frontend Developer with experience building scalable, high-quality web applications for internal business platforms and real-time communication systems. I specialize in developing user-centric interfaces while collaborating closely with Product Owners and cross-functional teams to deliver reliable, maintainable solutions.
-
-I have hands-on experience with CRM systems, VoIP/WebRTC integrations, and modern frontend stacks, and I actively leverage design systems and AI-assisted workflows to improve development efficiency and cross-team collaboration.
-
-### 🛠 Tech Stack
-
-- Frameworks & Libraries: Vue.js, React, Next.js
-- Languages: JavaScript, TypeScript
-- Styling & UI: Tailwind CSS, Design Systems, shadcn, PrimeVue, Material UI
-- Real-time & Communication: VoIP, WebRTC
-- Tools & Workflow: Git, Modern Build Tools (vite, bun), AI-assisted Development
-- State & App Architecture: Component Architecture, Frontend Integration Patterns
+# I'm Pawaris Wongsaied
+Frontend Developer with a strong track record of delivering scalable, high-quality web applications in collaboration with cross-functional teams. Experienced in working closely with Product Owners to interpret business requirements and deliver robust, user-centric frontend solutions. Proficient in using design systems as a shared foundation to collaborate with UX/UI, development, and QA teams, ensuring consistency and smooth cross-team workflows. Proactive in driving technical improvements and leveraging modern tools, including AI-assisted workflows, to enhance development productivity and code quality. 
