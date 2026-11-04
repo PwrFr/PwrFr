@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Lenis from "lenis";
+import { easeInOutCubic, lenisRef } from "@/lib/lenis";
 import { cancelFrame, frame, useReducedMotion } from "motion/react";
 
 /**
@@ -19,8 +20,6 @@ const JUMP_DURATION = 2;
 /** Ignore the tail of a trackpad swipe for this long (ms) after a jump lands. */
 const COOLDOWN_MS = 400;
 
-const easeInOutCubic = (t: number) =>
-  t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
 export function SmoothScroll({ children }: { children: ReactNode }) {
   const reduce = useReducedMotion();
@@ -42,6 +41,7 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
       smoothWheel: true,
       autoRaf: false,
     });
+    lenisRef.current = lenis;
 
     // Share Motion's frame loop so scroll-linked animations never lag the scroll.
     const update = ({ timestamp }: { timestamp: number }) =>
@@ -158,6 +158,7 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchmove", onTouchMove);
       cancelFrame(update);
+      lenisRef.current = null;
       lenis.destroy();
     };
   }, [reduce, isMobile]);
