@@ -13,18 +13,26 @@ export function Contact() {
   });
   // The email starts well above its resting place and slides down as you scroll,
   // so it lags behind the rest of the page. Raise the first number for a stronger effect.
-  const emailY = useParallax(scrollYProgress, -180, 0);
+  // const emailY = useParallax(scrollYProgress, -180, 0);
 
+  const ghostY = useParallax(scrollYProgress, 100, 0);
   return (
     <footer
       ref={ref}
       id="contact"
       className="relative isolate overflow-hidden m-6 bg-paper text-deep rounded-4xl"
     >
+      <motion.span
+        aria-hidden="true"
+        style={{ y: ghostY }}
+        className="text-outline-deep opacity-5 pointer-events-none absolute -top-16 right-0 z-0 select-none font-display text-[clamp(8rem,20vw,18rem)] font-extrabold leading-none tracking-[-0.05em]"
+      >
+        Contact
+      </motion.span>
       <div className="mx-auto max-w-[100rem] px-6 pb-14 pt-18 sm:px-10 md:pt-32">
         <motion.a
           href={`mailto:${profile.email}`}
-          style={{ y: emailY }}
+          // style={{ y: emailY }}
           className="inline-block font-display text-[clamp(2rem,8vw,8rem)] font-extrabold leading-[0.9] tracking-[-0.035em]"
         >
           {profile.email}

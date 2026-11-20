@@ -1,47 +1,58 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AnimatePresence,
   motion,
+  useInView,
   useMotionValueEvent,
+  useMotionValue,
   useScroll,
+  useSpring,
   useTransform,
 } from "motion/react";
+import { easeInOutCubic, lenisRef } from "@/lib/lenis";
+import { useParallax } from "@/lib/use-parallax";
 
 // Placeholder projects — swap in real ones (add `image: "/screens/x.webp"` to show a screenshot).
 type Project = {
   name: string;
   tagline: string;
   stack: string[];
-  accent: string; // tailwind gradient classes for the placeholder screen
+  accent?: string; // tailwind gradient classes for the placeholder screen
   image?: string;
+  video?: string; // screen recording, plays while this project is on screen
+  url?: string; // live site — clicking the screen opens it
 };
 
 const projects: Project[] = [
   {
-    name: "Project One",
-    tagline: "A short line about what this project does and why it matters.",
-    stack: ["React", "TypeScript", "Tailwind"],
-    accent: "from-orange-500 via-rose-500 to-fuchsia-600",
+    name: "Defyne Icons",
+    tagline:
+      "Icons for React: designed as one set, typed, and ready for Tailwind.",
+    stack: ["React", "TypeScript", "SVGR", "SVGO"],
+    video: "/export-1793781431413.mp4",
+    url: "https://defyne-docs.vercel.app",
   },
   {
-    name: "Project Two",
-    tagline: "Another placeholder describing the problem and the outcome.",
-    stack: ["Next.js", "Node", "Postgres"],
-    accent: "from-sky-500 via-indigo-500 to-violet-600",
+    name: "HBP Battery",
+    tagline:
+      "a battery service that comes to you: battery replacement, emergency jump-starts and basic checks.",
+    stack: ["Vue", "Vite", "Tailwind"],
+    video: "/export-1793848419021.mp4",
+    url: "https://hbpbattery.com/", // TODO: real project URL
   },
-  {
-    name: "Project Three",
-    tagline: "Third placeholder — replace with a real project summary.",
-    stack: ["Three.js", "R3F", "GSAP"],
-    accent: "from-emerald-400 via-teal-500 to-cyan-600",
-  },
+  // {
+  //   name: "Project Three",
+  //   tagline: "Third placeholder — replace with a real project summary.",
+  //   stack: ["Three.js", "R3F", "GSAP"],
+  //   accent: "from-emerald-400 via-teal-500 to-cyan-600",
+  // },
 ];
 
 // Display area inside /Macbook.webp (5150×3081), as % of the image.
 // Black lid spans x 300–4849, y 3–2821 px; inset ~60px for the bezel.
 const SCREEN = { left: "7%", top: "2.5%", width: "86%", height: "86%" };
 
-function Screen({ project }: { project: Project }) {
+function Placeholder({ project }: { project: Project }) {
   if (project.image) {
     return (
       <img
@@ -84,6 +95,50 @@ function Screen({ project }: { project: Project }) {
   );
 }
 
+const hostOf = (url: string) => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+};
+
+/** Pill that trails the cursor while hovering the screen. Fixed-positioned, so it
+ *  must render outside any transformed ancestor (the scaled laptop). */
+function CursorTooltip({
+  x,
+  y,
+  show,
+  label,
+}: {
+  x: ReturnType<typeof useSpring>;
+  y: ReturnType<typeof useSpring>;
+  show: boolean;
+  label: string;
+}) {
+  return (
+    <motion.div
+      aria-hidden="true"
+      className="pointer-events-none fixed left-0 top-0 z-[90]"
+      style={{ x, y }}
+    >
+      <AnimatePresence>
+        {show && (
+          <motion.span
+            initial={{ opacity: 0, scale: 0.6 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.6 }}
+            transition={{ type: "spring", stiffness: 400, damping: 28 }}
+            className="block -translate-x-1/2 -translate-y-[calc(100%+14px)] whitespace-nowrap rounded-full bg-neutral-50 px-4 py-2 text-sm font-semibold text-neutral-950 shadow-lg"
+          >
+            {label} <span aria-hidden="true">↗</span>
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
 // Middle of each project's slice of the section (as 0–1 scroll progress).
 const stops = projects.map((_, i) => (i + 0.5) / projects.length);
 // How much of each slice the project stays still for (0–1); the rest is the slide.
@@ -100,17 +155,69 @@ export function Projects() {
     offset: ["start start", "end end"],
   });
 
-  // Screen position follows scroll 1:1 — holds still around each stop, slides between.
-  const n = projects.length;
+  // Which project label is showing — holds around each stop.
   const input = stops.flatMap((c) => [c - HOLD_WIDTH / 2, c + HOLD_WIDTH / 2]);
   const output = stops.flatMap((_, i) => [i, i]);
   const track = useTransform(scrollYProgress, input, output);
-  const screenY = useTransform(track, (t) => `${(-t / n) * 100}%`);
+
+  // A project's video plays only while that project is on screen and the section is
+  // in view; it restarts each time the section is entered.
+  const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
+  // Section is several screens tall, so trigger once its top is 40% up the viewport.
+  const inView = useInView(ref, { margin: "0px 0px -40% 0px" });
+
+  useEffect(() => {
+    if (!inView) return;
+    for (const v of Object.values(videoRefs.current)) if (v) v.currentTime = 0;
+  }, [inView]);
+
+  useEffect(() => {
+    projects.forEach((p, i) => {
+      const v = videoRefs.current[p.name];
+      if (!v) return;
+      if (inView && i === active) v.play().catch(() => {});
+      else v.pause();
+    });
+  }, [inView, active]);
 
   useMotionValueEvent(track, "change", (t: number) => {
     const i = Math.round(t);
     if (i !== active) setActive(i);
   });
+
+  // Scroll the page to a project's stop (its screen and label follow from scroll).
+  const goTo = (i: number) => {
+    const el = ref.current;
+    if (!el) return;
+    const top = el.getBoundingClientRect().top + window.scrollY;
+    const range = el.offsetHeight - window.innerHeight;
+    const target = top + stops[i] * range;
+    const lenis = lenisRef.current;
+    if (lenis)
+      lenis.scrollTo(target, { duration: 1.2, easing: easeInOutCubic });
+    else window.scrollTo({ top: target, behavior: "smooth" });
+  };
+
+  // Cursor-following tooltip over the screen (springs for a soft trail)
+  const [hovering, setHovering] = useState(false);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const tipX = useSpring(mouseX, { stiffness: 500, damping: 40, mass: 0.4 });
+  const tipY = useSpring(mouseY, { stiffness: 500, damping: 40, mass: 0.4 });
+  const onScreenMove = (e: React.PointerEvent) => {
+    if (e.pointerType !== "mouse") return; // touch: just tap the link
+    if (!hovering) {
+      // Jump straight to the cursor on enter instead of flying in from (0,0)
+      tipX.jump(e.clientX);
+      tipY.jump(e.clientY);
+      setHovering(true);
+    }
+    mouseX.set(e.clientX);
+    mouseY.set(e.clientY);
+  };
+
+  // Ghost word drifts down the pinned screen as you scroll through the section
+  const ghostY = useParallax(scrollYProgress, 40, -80);
 
   // Laptop eases in as the section pins
   const scale = useTransform(scrollYProgress, [0, 0.12], [0.85, 1]);
@@ -120,13 +227,51 @@ export function Projects() {
     <section
       id="projects"
       ref={ref}
-      className="relative bg-neutral-950 text-neutral-50"
+      className="relative bg-paper text-deep"
       style={{ height: `${projects.length * VH_PER_PROJECT + 100}vh` }}
     >
-      <div className="sticky top-0 flex h-screen flex-col items-center justify-center gap-8 overflow-hidden px-6">
-        <h2 className="font-display text-[clamp(2.5rem,7vw,6rem)] font-extrabold leading-none tracking-[-0.03em]">
+      <div className="sticky top-0 isolate flex h-screen flex-col items-center justify-center gap-8 overflow-hidden px-6">
+        {/* Ghost word lives inside the pinned viewport, so it stays on screen for the
+            whole section and drifts slowly with scroll behind the content. */}
+        <motion.span
+          aria-hidden="true"
+          style={{ y: ghostY }}
+          className="text-outline-deep opacity-5 pointer-events-none absolute top-0 right-0 -z-10 select-none font-display text-[clamp(8rem,20vw,18rem)] font-extrabold leading-none tracking-[-0.05em]"
+        >
+          Project
+        </motion.span>
+        {/* <h2 className="font-display text-[clamp(2.5rem,7vw,6rem)] font-extrabold leading-none tracking-[-0.03em]">
           Projects
-        </h2>
+        </h2> */}
+        <div className="flex w-full max-w-5xl items-start justify-center text-center gap-6">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={project.name}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.35 }}
+            >
+              <h2 className="font-display text-5xl font-bold">
+                {project.name}
+              </h2>
+              <p className="mt-1 text-neutral-200">{project.tagline}</p>
+              <span className="mt-1 text-sm text-neutral-400">
+                {project.stack.join(" · ")}
+              </span>
+            </motion.div>
+          </AnimatePresence>
+          {/* <div className="flex items-center gap-2 pt-2" aria-hidden="true">
+            {projects.map((p, i) => (
+              <span
+                key={p.name}
+                className={`h-1.5 rounded-full transition-all duration-500 ${
+                  i === active ? "w-8 bg-neutral-50" : "w-1.5 bg-neutral-600"
+                }`}
+              />
+            ))}
+          </div> */}
+        </div>
 
         <motion.div style={{ scale }} className="relative w-full max-w-5xl">
           <img
@@ -135,25 +280,68 @@ export function Projects() {
             aria-hidden="true"
             className="pointer-events-none block h-auto w-full select-none"
           />
-          <div
-            className="absolute overflow-hidden rounded-t-[0.6%] bg-black"
+          <a
+            href={project.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={
+              project.url
+                ? `Visit ${project.name} (opens in a new tab)`
+                : undefined
+            }
+            onPointerMove={project.url ? onScreenMove : undefined}
+            onPointerLeave={() => setHovering(false)}
+            className={`absolute block overflow-hidden rounded-lg bg-black focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-50 ${
+              project.url ? "cursor-none" : "pointer-events-none"
+            }`}
             style={SCREEN}
           >
-            <motion.div
-              className="absolute inset-x-0 top-0 will-change-transform"
-              style={{ y: screenY, height: `${n * 100}%` }}
-            >
-              {projects.map((p) => (
-                <div key={p.name} style={{ height: `${100 / n}%` }}>
-                  <Screen project={p} />
-                </div>
-              ))}
-            </motion.div>
-          </div>
+            {/* Videos stay mounted so they keep buffering; fade in when active */}
+            {projects.map((p, i) =>
+              p.video ? (
+                <video
+                  key={p.name}
+                  ref={(el) => {
+                    videoRefs.current[p.name] = el;
+                  }}
+                  src={p.video}
+                  className="absolute inset-0 h-full w-full object-cover object-top transition-opacity duration-500"
+                  style={{ opacity: i === active ? 1 : 0 }}
+                  muted
+                  playsInline
+                  preload={i === 0 ? "auto" : "metadata"}
+                  loop
+                  disablePictureInPicture
+                  aria-label={`${p.name} walkthrough`}
+                />
+              ) : null,
+            )}
+            <AnimatePresence initial={false}>
+              {!project.video && (
+                <motion.div
+                  key={project.name}
+                  className="absolute inset-0"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Placeholder project={project} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </a>
         </motion.div>
 
-        <div className="flex w-full max-w-5xl items-start justify-between gap-6">
-          <AnimatePresence mode="wait">
+        <CursorTooltip
+          x={tipX}
+          y={tipY}
+          show={hovering && !!project.url}
+          label={project.url ? `Visit ${hostOf(project.url)}` : ""}
+        />
+
+        <div className="flex w-full max-w-5xl items-start justify-end gap-6">
+          {/* <AnimatePresence mode="wait">
             <motion.div
               key={project.name}
               initial={{ opacity: 0, y: 12 }}
@@ -166,17 +354,27 @@ export function Projects() {
                 {project.stack.join(" · ")}
               </p>
             </motion.div>
-          </AnimatePresence>
-          <div className="flex items-center gap-2 pt-2" aria-hidden="true">
+          </AnimatePresence> */}
+          <nav className="flex items-center gap-1" aria-label="Projects">
             {projects.map((p, i) => (
-              <span
+              <button
                 key={p.name}
-                className={`h-1.5 rounded-full transition-all duration-500 ${
-                  i === active ? "w-8 bg-neutral-50" : "w-1.5 bg-neutral-600"
-                }`}
-              />
+                type="button"
+                onClick={() => goTo(i)}
+                aria-label={`Show ${p.name}`}
+                aria-current={i === active ? "true" : undefined}
+                className="group cursor-pointer rounded-full p-1.5 focus-visible:outline-2 focus-visible:outline-neutral-50"
+              >
+                <span
+                  className={`block h-1.5 rounded-full transition-all duration-500 ${
+                    i === active
+                      ? "w-8 bg-neutral-50"
+                      : "w-1.5 bg-neutral-600 group-hover:bg-neutral-400"
+                  }`}
+                />
+              </button>
             ))}
-          </div>
+          </nav>
         </div>
       </div>
     </section>
